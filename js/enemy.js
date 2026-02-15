@@ -6,6 +6,8 @@ import {
   PATROLLER_ALERT_DIST,
   PLAYER_MOVE_DURATION,
   ENEMY_MIN_SPAWN_RATIO,
+  ENEMY_MISTAKE_CHANCE,
+  ENEMY_VIEW_RADIUS,
 } from './config.js';
 import { astar } from './pathfinding.js';
 import { manhattan, lerp, clamp, shuffle } from './utils.js';
@@ -77,6 +79,24 @@ export class Enemy {
 
   /** 计算目标位置（根据 AI 类型） */
   getTarget(player, grid) {
+    const dist = manhattan(this.gridX, this.gridY, player.gridX, player.gridY);
+
+    // ── 视野检测：超出视野范围则无法感知玩家，随机巡逻 ──
+    if (dist > ENEMY_VIEW_RADIUS) {
+      // 巡逻者脱离追击模式
+      if (this.type === EnemyType.PATROLLER && this.alertMode) {
+        this.alertMode = false;
+        this.speedMult = PATROLLER_SPEED_PATROL;
+        this.repathInterval = PATROLLER_REPATH_PATROL_MS;
+      }
+      if (!this.patrolTarget ||
+          (this.gridX === this.patrolTarget.x && this.gridY === this.patrolTarget.y)) {
+        this.patrolTarget = this._randomPatrolTarget(grid);
+      }
+      return this.patrolTarget;
+    }
+
+    // ── 在视野内：按 AI 类型追踪 ──
     switch (this.type) {
       case EnemyType.CHASER:
         return { x: player.gridX, y: player.gridY };
@@ -96,8 +116,6 @@ export class Enemy {
       }
 
       case EnemyType.PATROLLER: {
-        const dist = manhattan(this.gridX, this.gridY, player.gridX, player.gridY);
-
         if (dist <= PATROLLER_ALERT_DIST) {
           // 切换到追击模式
           if (!this.alertMode) {
@@ -107,13 +125,12 @@ export class Enemy {
           }
           return { x: player.gridX, y: player.gridY };
         } else {
-          // 巡逻模式
+          // 在视野内但未触发追击，继续巡逻
           if (this.alertMode) {
             this.alertMode = false;
             this.speedMult = PATROLLER_SPEED_PATROL;
             this.repathInterval = PATROLLER_REPATH_PATROL_MS;
           }
-          // 选择随机巡逻点
           if (!this.patrolTarget ||
               (this.gridX === this.patrolTarget.x && this.gridY === this.patrolTarget.y)) {
             this.patrolTarget = this._randomPatrolTarget(grid);
@@ -161,33 +178,60 @@ export class Enemy {
 
     // 沿路径移动
     if (!this.moving && this.path.length > 0 && this.pathIndex < this.path.length) {
-      const [nx, ny] = this.path[this.pathIndex];
-
-      // 验证可通行
-      const dx = nx - this.gridX;
-      const dy = ny - this.gridY;
-      let dir;
-      if (dx === 1) dir = 'right';
-      else if (dx === -1) dir = 'left';
-      else if (dy === 1) dir = 'bottom';
-      else if (dy === -1) dir = 'top';
-
-      const cell = grid.get(this.gridX, this.gridY);
-      if (dir && cell && !cell.walls[dir]) {
-        this.moving = true;
-        this.moveStartX = this.gridX;
-        this.moveStartY = this.gridY;
-        this.moveTargetX = nx;
-        this.moveTargetY = ny;
-        this.moveTimer = 0;
-        this.moveDuration = PLAYER_MOVE_DURATION / this.speedMult;
-        this.gridX = nx;
-        this.gridY = ny;
-        this.pathIndex++;
+      // 概率犯错：随机选一个方向走，模拟敌人"晕头转向"
+      if (Math.random() < ENEMY_MISTAKE_CHANCE) {
+        const cell = grid.get(this.gridX, this.gridY);
+        if (cell) {
+          const walkable = [
+            { dir: 'top',    dx: 0,  dy: -1 },
+            { dir: 'bottom', dx: 0,  dy: 1  },
+            { dir: 'left',   dx: -1, dy: 0  },
+            { dir: 'right',  dx: 1,  dy: 0  },
+          ].filter(d => !cell.walls[d.dir]);
+          if (walkable.length > 0) {
+            const pick = walkable[Math.floor(Math.random() * walkable.length)];
+            this.moving = true;
+            this.moveStartX = this.gridX;
+            this.moveStartY = this.gridY;
+            this.moveTargetX = this.gridX + pick.dx;
+            this.moveTargetY = this.gridY + pick.dy;
+            this.moveTimer = 0;
+            this.moveDuration = PLAYER_MOVE_DURATION / this.speedMult;
+            this.gridX = this.moveTargetX;
+            this.gridY = this.moveTargetY;
+            // 走错后清除路径，等下次重算才能恢复追踪
+            this.path = [];
+          }
+        }
       } else {
-        // 路径失效，强制重算
-        this.path = [];
-        this.repathTimer = 0;
+        const [nx, ny] = this.path[this.pathIndex];
+
+        // 验证可通行
+        const dx = nx - this.gridX;
+        const dy = ny - this.gridY;
+        let dir;
+        if (dx === 1) dir = 'right';
+        else if (dx === -1) dir = 'left';
+        else if (dy === 1) dir = 'bottom';
+        else if (dy === -1) dir = 'top';
+
+        const cell = grid.get(this.gridX, this.gridY);
+        if (dir && cell && !cell.walls[dir]) {
+          this.moving = true;
+          this.moveStartX = this.gridX;
+          this.moveStartY = this.gridY;
+          this.moveTargetX = nx;
+          this.moveTargetY = ny;
+          this.moveTimer = 0;
+          this.moveDuration = PLAYER_MOVE_DURATION / this.speedMult;
+          this.gridX = nx;
+          this.gridY = ny;
+          this.pathIndex++;
+        } else {
+          // 路径失效，强制重算
+          this.path = [];
+          this.repathTimer = 0;
+        }
       }
     }
 

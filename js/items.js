@@ -94,7 +94,7 @@ export function placeItems(grid, numKeys, level) {
   }
 
   // 4. 放置护盾
-  const shieldCount = 1;
+  const shieldCount = 2;
   for (let i = 0; i < shieldCount; i++) {
     const cell = nextDeadEnd() || nextIntersection();
     if (cell) {
@@ -104,7 +104,7 @@ export function placeItems(grid, numKeys, level) {
   }
 
   // 5. 放置冰冻球 — 死胡同
-  const freezeCount = 1;
+  const freezeCount = 2;
   for (let i = 0; i < freezeCount; i++) {
     const cell = nextDeadEnd();
     if (cell) {
@@ -114,7 +114,7 @@ export function placeItems(grid, numKeys, level) {
   }
 
   // 6. 放置地图卷轴 — 稀有，仅高关卡
-  if (level >= 2) {
+  if (level >= 1) {
     const cell = nextDeadEnd();
     if (cell) {
       cell.item = { type: ItemType.MAP };
