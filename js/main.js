@@ -204,10 +204,12 @@ class Game {
       this.message.timer -= dt;
     }
 
-    // 玩家移动
-    const dir = this.input.getDirection();
-    if (dir && !this.player.moving) {
-      this.player.tryMove(dir, this.grid);
+    // 玩家移动（仅在非动画时消费输入缓冲，避免丢失按键）
+    if (!this.player.moving) {
+      const dir = this.input.getDirection();
+      if (dir) {
+        this.player.tryMove(dir, this.grid);
+      }
     }
     this.player.update(dt);
 

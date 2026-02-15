@@ -2,6 +2,7 @@
 export const CANVAS_W = 800;
 export const CANVAS_H = 600;
 export const CELL_SIZE = 32;          // 每个格子在画布上的像素大小
+export const HUD_HEIGHT = 36;        // 顶部 HUD 栏高度（像素）
 export const SPRITE_SIZE = 12;        // sprite 原始像素尺寸
 export const WALL_THICKNESS = 2;      // 墙壁厚度（像素）
 
@@ -12,7 +13,7 @@ export const MAZE_GROW = 4;          // 每关增加格数
 export const LOOP_RATIO = 0.08;      // 环路比例（随机移除墙壁）
 
 // ── 玩家 ──
-export const PLAYER_MOVE_DURATION = 150;  // 移动插值时长（ms）
+export const PLAYER_MOVE_DURATION = 120;  // 移动插值时长（ms）
 export const PLAYER_SPEED_MULT = 1.0;     // 基础速度倍率
 export const SPEED_BOOST_MULT = 1.5;      // 加速靴倍率
 export const SPEED_BOOST_DURATION = 8000; // 加速靴持续时间（ms）

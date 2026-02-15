@@ -1,4 +1,4 @@
-import { CANVAS_W, CANVAS_H, COLORS } from './config.js';
+import { CANVAS_W, CANVAS_H, HUD_HEIGHT, COLORS } from './config.js';
 
 /**
  * UI 界面绘制
@@ -121,7 +121,7 @@ export function drawGameOver(ctx, reason, score, level) {
 /** 绘制 HUD（得分、钥匙、时间等） */
 export function drawHUD(ctx, player, level, timeLeft, message) {
   const pad = 10;
-  const h = 36;
+  const h = HUD_HEIGHT;
 
   // HUD 背景条
   ctx.fillStyle = COLORS.hudBg;

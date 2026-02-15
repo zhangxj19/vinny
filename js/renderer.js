@@ -252,6 +252,36 @@ export class Renderer {
       } else {
         this.drawSprite(sprite, sx, sy);
       }
+
+      // 感叹号动画：敌人发现玩家时弹出 "!"
+      if (enemy.alerted && !enemy.frozen && enemy.alertShowTimer > 0) {
+        const ctx = this.ctx;
+        // 弹跳动画：前半段弹上，后半段回落
+        const progress = 1 - enemy.alertShowTimer / 800;
+        let bounceY;
+        if (progress < 0.3) {
+          // 弹上阶段
+          bounceY = -12 * (progress / 0.3);
+        } else {
+          // 回落并停住
+          const t = (progress - 0.3) / 0.7;
+          bounceY = -12 * (1 - t * 0.5);
+        }
+
+        const alertX = sx + CELL_SIZE / 2;
+        const alertY = sy - 4 + bounceY;
+
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        // 黑色描边增强可见度
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText('!', alertX, alertY);
+        // 黄色填充
+        ctx.fillStyle = '#ffd700';
+        ctx.fillText('!', alertX, alertY);
+      }
     }
   }
 

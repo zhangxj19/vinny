@@ -57,6 +57,10 @@ export class Enemy {
     this.alertMode = false;
     this.patrolTarget = null;
 
+    // 发现玩家状态（用于感叹号动画）
+    this.alerted = false;
+    this.alertShowTimer = 0;
+
     this._configByType();
   }
 
@@ -89,6 +93,7 @@ export class Enemy {
         this.speedMult = PATROLLER_SPEED_PATROL;
         this.repathInterval = PATROLLER_REPATH_PATROL_MS;
       }
+      this.alerted = false;
       if (!this.patrolTarget ||
           (this.gridX === this.patrolTarget.x && this.gridY === this.patrolTarget.y)) {
         this.patrolTarget = this._randomPatrolTarget(grid);
@@ -97,6 +102,7 @@ export class Enemy {
     }
 
     // ── 在视野内：按 AI 类型追踪 ──
+    this.alerted = true;
     switch (this.type) {
       case EnemyType.CHASER:
         return { x: player.gridX, y: player.gridY };
@@ -164,7 +170,13 @@ export class Enemy {
       return;
     }
 
+    // 感叹号动画计时
+    if (this.alertShowTimer > 0) {
+      this.alertShowTimer -= dt;
+    }
+
     // 路径重算计时
+    const wasAlerted = this.alerted;
     this.repathTimer -= dt;
     if (this.repathTimer <= 0) {
       this.repathTimer = this.repathInterval;
@@ -174,6 +186,11 @@ export class Enemy {
         this.path = newPath;
         this.pathIndex = 1; // 跳过起点
       }
+    }
+
+    // 发现玩家瞬间触发感叹号动画
+    if (this.alerted && !wasAlerted) {
+      this.alertShowTimer = 800;
     }
 
     // 沿路径移动
