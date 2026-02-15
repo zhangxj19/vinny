@@ -1,5 +1,5 @@
 import {
-  CANVAS_W, CANVAS_H,
+  CANVAS_W, CANVAS_H, HUD_HEIGHT,
   BASE_MAZE_W, BASE_MAZE_H, MAZE_GROW,
   ENEMY_BASE_COUNT, ENEMY_ADD_PER_LEVEL,
   FREEZE_DURATION, MAP_REVEAL_DURATION,
@@ -289,6 +289,12 @@ class Game {
   /** 绘制游戏场景 */
   _renderGame(now) {
     this.renderer.clear();
+
+    // 将游戏区域下移 HUD_HEIGHT，避免地图被顶部状态栏遮挡
+    const ctx = this.renderer.ctx;
+    ctx.save();
+    ctx.translate(0, HUD_HEIGHT);
+
     this.renderer.drawMaze(this.grid, this.camera);
     this.renderer.drawExit(this.exitX, this.exitY, this.camera, now);
     this.renderer.drawItems(this.grid, this.camera, now);
@@ -311,7 +317,9 @@ class Game {
     // 战争迷雾
     this.renderer.drawFog(this.grid, this.player, this.camera, mapRevealed);
 
-    // HUD
+    ctx.restore();
+
+    // HUD 固定在屏幕顶部（不受 translate 影响）
     drawHUD(this.renderer.ctx, this.player, this.level, this.timeLeft, this.message);
   }
 }
